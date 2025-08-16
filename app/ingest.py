@@ -1,25 +1,39 @@
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
 import os
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 DATA_DIR = "data"
 PERSIST_DIR = "chroma_db"
+PROCESSED_FILES_LOG = os.path.join(PERSIST_DIR, "processed_files.log")
 
+def get_processed_files():
+    if not os.path.exists(PROCESSED_FILES_LOG):
+        return set()
+    with open(PROCESSED_FILES_LOG, "r") as f:
+        return set(f.read().splitlines())
 
-def load_pdfs(data_dir):
+def update_processed_files(new_files):
+    with open(PROCESSED_FILES_LOG, "a") as f:
+        for filename in new_files:
+            f.write(f"{filename}\n")
+
+def load_new_pdfs(data_dir, processed_files):
     docs = []
+    new_files = []
     for filename in os.listdir(data_dir):
-        if filename.lower().endswith(".pdf"):
+        if filename.lower().endswith(".pdf") and filename not in processed_files:
             filepath = os.path.join(data_dir, filename)
-            print(f"Loading: {filepath}")
+            print(f"Loading new file: {filepath}")
             loader = PyPDFLoader(filepath)
             docs.extend(loader.load())
-    return docs
-
+            new_files.append(filename)
+    return docs, new_files
 
 def chunk_documents(docs, chunk_size=1000, chunk_overlap=200):
+    if not docs:
+        return []
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap
@@ -28,20 +42,42 @@ def chunk_documents(docs, chunk_size=1000, chunk_overlap=200):
     print(f"Split into {len(chunks)} chunks.")
     return chunks
 
-
-def build_chroma_index(chunks, persist_dir):
+def manage_chroma_index(chunks, persist_dir):
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2")
-    vectordb = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        persist_directory=persist_dir
-    )
 
+    if not os.path.exists(persist_dir):
+        os.makedirs(persist_dir)
+
+    if not chunks:
+        print("No new documents to add to ChromaDB.")
+        return
+
+    if os.path.exists(os.path.join(persist_dir, "chroma.sqlite3")):
+        print("Adding to existing ChromaDB.")
+        vectordb = Chroma(
+            persist_directory=persist_dir,
+            embedding_function=embeddings
+        )
+        vectordb.add_documents(chunks)
+    else:
+        print("Creating new ChromaDB.")
+        vectordb = Chroma.from_documents(
+            documents=chunks,
+            embedding=embeddings,
+            persist_directory=persist_dir
+        )
+    
     print(f"Saved ChromaDB to: {persist_dir}")
 
 
 if __name__ == "__main__":
-    documents = load_pdfs(DATA_DIR)
-    chunks = chunk_documents(documents)
-    build_chroma_index(chunks, PERSIST_DIR)
+    processed_files = get_processed_files()
+    documents, new_files = load_new_pdfs(DATA_DIR, processed_files)
+    
+    if documents:
+        chunks = chunk_documents(documents)
+        manage_chroma_index(chunks, PERSIST_DIR)
+        update_processed_files(new_files)
+    else:
+        print("No new PDF files to process.")
