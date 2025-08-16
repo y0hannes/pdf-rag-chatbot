@@ -3,7 +3,7 @@ from shared import create_qa_chain
 if __name__ == "__main__":
     qa = create_qa_chain()
 
-    print("💬 PDF Chatbot (Mistral-Ollama) — type 'exit' to quit")
+    print("💬 PDF Chatbot () — type 'exit' to quit")
     while True:
         query = input("\nQuestion: ")
         if query.lower() in ["exit", "quit"]:

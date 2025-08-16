@@ -1,12 +1,15 @@
 import os
-from langchain_huggingface import HuggingFaceEmbeddings
+import os
+from dotenv import load_dotenv
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
-from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
 
 DATA_DIR = "data"
 PERSIST_DIR = "chroma_db"
 PROCESSED_FILES_LOG = os.path.join(PERSIST_DIR, "processed_files.log")
+
 
 def get_processed_files():
     if not os.path.exists(PROCESSED_FILES_LOG):
@@ -14,10 +17,12 @@ def get_processed_files():
     with open(PROCESSED_FILES_LOG, "r") as f:
         return set(f.read().splitlines())
 
+
 def update_processed_files(new_files):
     with open(PROCESSED_FILES_LOG, "a") as f:
         for filename in new_files:
             f.write(f"{filename}\n")
+
 
 def load_new_pdfs(data_dir, processed_files):
     docs = []
@@ -31,6 +36,7 @@ def load_new_pdfs(data_dir, processed_files):
             new_files.append(filename)
     return docs, new_files
 
+
 def chunk_documents(docs, chunk_size=1000, chunk_overlap=200):
     if not docs:
         return []
@@ -42,9 +48,10 @@ def chunk_documents(docs, chunk_size=1000, chunk_overlap=200):
     print(f"Split into {len(chunks)} chunks.")
     return chunks
 
+
 def manage_chroma_index(chunks, persist_dir):
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
     if not os.path.exists(persist_dir):
         os.makedirs(persist_dir)
@@ -67,14 +74,15 @@ def manage_chroma_index(chunks, persist_dir):
             embedding=embeddings,
             persist_directory=persist_dir
         )
-    
+
     print(f"Saved ChromaDB to: {persist_dir}")
 
 
 if __name__ == "__main__":
+    load_dotenv()
     processed_files = get_processed_files()
     documents, new_files = load_new_pdfs(DATA_DIR, processed_files)
-    
+
     if documents:
         chunks = chunk_documents(documents)
         manage_chroma_index(chunks, PERSIST_DIR)

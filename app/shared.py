@@ -1,27 +1,28 @@
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+import os
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_chroma import Chroma
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
-from langchain_community.llms import Ollama
+
+load_dotenv()
 
 PERSIST_DIR = "chroma_db"
-embedding_model_name = "sentence-transformers/all-MiniLM-L6-v2"
-ollama_model = "mistral"
-
 
 def load_chroma():
-    embeddings = HuggingFaceEmbeddings(model_name=embedding_model_name)
+
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.getenv("GOOGLE_API_KEY"))
     vectordb = Chroma(
         persist_directory=PERSIST_DIR,
         embedding_function=embeddings
     )
     return vectordb
 
-
 def create_qa_chain():
     db = load_chroma()
     retriever = db.as_retriever(
-        search_type="similarity", search_kwargs={"k": 3})
+        search_type="mmr", search_kwargs={"k": 2})
 
     template = """You are a helpful assistant answering questions strictly using the provided context.
 If the context does not contain the answer, say "I don't know based on the document."
@@ -37,7 +38,7 @@ Answer:"""
     prompt = PromptTemplate(template=template, input_variables=[
                             "context", "question"])
 
-    llm = Ollama(model=ollama_model, temperature=0)
+    llm = ChatGroq(model_name="llama3-8b-8192", temperature=0)
 
     qa = RetrievalQA.from_chain_type(
         llm=llm,
