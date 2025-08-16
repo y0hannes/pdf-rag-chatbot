@@ -1,13 +1,14 @@
 import os
-import os
 from dotenv import load_dotenv
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 
-DATA_DIR = "data"
-PERSIST_DIR = "chroma_db"
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+PERSIST_DIR = os.path.join(PROJECT_ROOT, "chroma_db")
 PROCESSED_FILES_LOG = os.path.join(PERSIST_DIR, "processed_files.log")
 
 
