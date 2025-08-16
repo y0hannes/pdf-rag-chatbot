@@ -79,7 +79,7 @@ def manage_chroma_index(chunks, persist_dir):
     print(f"Saved ChromaDB to: {persist_dir}")
 
 
-if __name__ == "__main__":
+def main():
     load_dotenv()
     processed_files = get_processed_files()
     documents, new_files = load_new_pdfs(DATA_DIR, processed_files)
@@ -90,3 +90,7 @@ if __name__ == "__main__":
         update_processed_files(new_files)
     else:
         print("No new PDF files to process.")
+
+
+if __name__ == "__main__":
+    main()
