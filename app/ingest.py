@@ -5,6 +5,9 @@ from langchain_chroma import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 
+load_dotenv(override=True)
+
+
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")

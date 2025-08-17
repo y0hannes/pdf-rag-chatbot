@@ -21,6 +21,7 @@ def load_qa_chain():
 st.set_page_config(page_title="PDF RAG Chatbot", page_icon="📄")
 st.title("📄 PDF RAG Chatbot")
 
+# ---------------- Sidebar ---------------- #
 with st.sidebar:
     st.header("Upload PDF")
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
@@ -43,36 +44,59 @@ with st.sidebar:
         else:
             st.info("File already exists. Using existing data.")
 
-    if st.button("Clear Chat History"):
-        st.session_state.messages = []
+    st.header("💬 Conversations")
+    if "conversations" not in st.session_state:
+        st.session_state.conversations = {"Conversation 1": []}
+        st.session_state.active_conversation = "Conversation 1"
+
+    conversation_list = list(st.session_state.conversations.keys())
+    selected_conv = st.radio(
+        "Select a conversation",
+        conversation_list,
+        index=conversation_list.index(st.session_state.active_conversation),
+    )
+    st.session_state.active_conversation = selected_conv
+
+    if st.button("➕ New Conversation"):
+        new_name = f"Conversation {len(st.session_state.conversations) + 1}"
+        st.session_state.conversations[new_name] = []
+        st.session_state.active_conversation = new_name
+        st.rerun()
+
+    if st.button("🗑 Clear Current Conversation"):
+        st.session_state.conversations[st.session_state.active_conversation] = []
+        st.rerun()
+
+    if st.button("♻️ Reset All Conversations"):
+        st.session_state.conversations = {"Conversation 1": []}
+        st.session_state.active_conversation = "Conversation 1"
         st.cache_resource.clear()
         st.rerun()
 
 
+# ---------------- Main Chat Section ---------------- #
 qa_chain = load_qa_chain()
+messages = st.session_state.conversations[st.session_state.active_conversation]
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-for message in st.session_state.messages:
+for message in messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
 if query := st.chat_input("Ask a question about your PDF:"):
-    st.session_state.messages.append({"role": "user", "content": query})
+    messages.append({"role": "user", "content": query})
     with st.chat_message("user"):
         st.markdown(query)
 
     with st.spinner("Thinking..."):
         result = asyncio.run(qa_chain.ainvoke(query))
-        response = result['result']
-        
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        response = result["answer"]
+
+        messages.append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
             st.markdown(response)
 
             with st.expander("Show sources"):
                 for doc in result["source_documents"]:
                     metadata_str = ", ".join(f"{k}: {v}" for k, v in doc.metadata.items())
-                    st.markdown(f'**{metadata_str}**')
+                    st.markdown(f"**{metadata_str}**")
                     st.write(doc.page_content[:500] + "...")
