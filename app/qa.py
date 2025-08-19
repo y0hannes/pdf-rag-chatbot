@@ -1,22 +1,3 @@
-# from shared import create_qa_chain
-
-# if __name__ == "__main__":
-#     qa = create_qa_chain()
-
-#     print("💬 PDF Chatbot (with memory) — type 'exit' to quit")
-#     while True:
-#         query = input("\nQuestion: ")
-#         if query.lower() in ["exit", "quit"]:
-#             break
-
-#         result = qa.invoke({"question": query})
-#         print("\nAnswer:", result["answer"])
-
-#         print("\n--- Sources ---")
-#         for doc in result["source_documents"]:
-#             print(f"{doc.metadata} -> {doc.page_content[:200]}...")
-
-
 from shared import create_qa_chain
 
 if __name__ == "__main__":
@@ -29,7 +10,7 @@ if __name__ == "__main__":
             break
 
         result = qa.invoke({"question": query})
-        print("\nAnswer:", result["answer"])  # <-- changed to 'answer'
+        print("\nAnswer:", result["answer"])
 
         if "source_documents" in result:
             print("\n--- Sources ---")

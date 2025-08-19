@@ -5,17 +5,14 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain.prompts import PromptTemplate
 from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationSummaryMemory
+from app.config import PERSIST_DIR, EMBEDDING_MODEL, LLM_MODEL
 
 load_dotenv()
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-PERSIST_DIR = os.path.join(PROJECT_ROOT, "chroma_db")
-
-
 def load_chroma():
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
+        model=EMBEDDING_MODEL,
         google_api_key=os.getenv("GOOGLE_API_KEY")
     )
     vectordb = Chroma(
@@ -23,7 +20,6 @@ def load_chroma():
         embedding_function=embeddings
     )
     return vectordb
-
 
 def create_qa_chain():
     db = load_chroma()
@@ -45,9 +41,10 @@ def create_qa_chain():
         input_variables=["chat_history", "context", "question"]
     )
 
-    llm = ChatGroq(model_name="llama3-8b-8192", temperature=0)
+    llm = ChatGroq(model_name=LLM_MODEL, temperature=0)
 
-    memory = ConversationBufferMemory(
+    memory = ConversationSummaryMemory(
+        llm=llm,
         memory_key="chat_history",
         return_messages=True,
         output_key="answer"
