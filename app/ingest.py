@@ -5,7 +5,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
-from app.config import DATA_DIR, PERSIST_DIR, PROCESSED_FILES_LOG, EMBEDDING_MODEL
+from config import DATA_DIR, PERSIST_DIR, PROCESSED_FILES_LOG, EMBEDDING_MODEL
 
 load_dotenv(override=True)
 
