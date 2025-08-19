@@ -8,7 +8,7 @@ from ingest import main as ingest_main
 from config import DATA_DIR, PERSIST_DIR, PROCESSED_FILES_LOG
 
 
-# ---------------- Event Loop ---------------- #
+# Event Loop 
 def get_or_create_eventloop():
     try:
         return asyncio.get_running_loop()
@@ -21,7 +21,7 @@ def get_or_create_eventloop():
 get_or_create_eventloop()
 
 
-# ---------------- Caching ---------------- #
+# Caching 
 @st.cache_resource
 def load_qa_chain():
     return create_qa_chain()
@@ -31,12 +31,12 @@ def generate_title(query):
     return query[:50] + "..." if len(query) > 50 else query
 
 
-# ---------------- Page Config ---------------- #
+# Page Config
 st.set_page_config(page_title="PDF RAG Chatbot", page_icon="📄")
 st.title("📄 PDF RAG Chatbot")
 
 
-# ---------------- Sidebar ---------------- #
+# Sidebar
 with st.sidebar:
     st.header("Upload PDF")
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
@@ -63,7 +63,7 @@ with st.sidebar:
         else:
             st.info("File already exists. Using existing data.")
 
-    # ---------------- PDF List ---------------- #
+    # PDF List
     st.subheader("📂 Uploaded PDFs")
     if os.path.exists(DATA_DIR) and os.listdir(DATA_DIR):
         for filename in os.listdir(DATA_DIR):
@@ -89,7 +89,7 @@ with st.sidebar:
     else:
         st.info("No PDFs uploaded yet.")
 
-    # ---------------- Conversation Management ---------------- #
+    # Conversation Management
     st.header("💬 Conversations")
     if "conversations" not in st.session_state:
         st.session_state.conversations = {"Conversation 1": []}
@@ -130,16 +130,28 @@ with st.sidebar:
         st.rerun()
 
 
-# ---------------- Main Chat Section ---------------- #
+# Main Chat Section
 qa_chain = load_qa_chain()
 messages = st.session_state.get("conversations", {"Conversation 1": []}).get(
     st.session_state.get("active_conversation", "Conversation 1"), []
 )
 
-# Display chat history
-for message in messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Display chat history with timestamps
+if len(messages) > 10:
+    with st.expander("📜 Conversation History (collapsed)", expanded=False):
+        for message in messages:
+            with st.chat_message(message["role"]):
+                ts = message.get("timestamp", None)
+                if ts:
+                    st.caption(f"🕒 {ts}")
+                st.markdown(message["content"])
+else:
+    for message in messages:
+        with st.chat_message(message["role"]):
+            ts = message.get("timestamp", None)
+            if ts:
+                st.caption(f"🕒 {ts}")
+            st.markdown(message["content"])
 
 # Chat input
 if query := st.chat_input("Ask a question about your PDF:"):
@@ -158,8 +170,13 @@ if query := st.chat_input("Ask a question about your PDF:"):
             )
             st.session_state.active_conversation = new_title
 
-        messages.append({"role": "user", "content": query})
+        messages.append({
+            "role": "user",
+            "content": query,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
         with st.chat_message("user"):
+            st.caption(f"🕒 {messages[-1]['timestamp']}")
             st.markdown(query)
 
         with st.spinner("Thinking..."):
@@ -167,8 +184,13 @@ if query := st.chat_input("Ask a question about your PDF:"):
                 result = asyncio.run(qa_chain.ainvoke(query))
                 response = result["answer"]
 
-                messages.append({"role": "assistant", "content": response})
+                messages.append({
+                    "role": "assistant",
+                    "content": response,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
                 with st.chat_message("assistant"):
+                    st.caption(f"🕒 {messages[-1]['timestamp']}")
                     st.markdown(response)
 
                     with st.expander("Show sources"):
