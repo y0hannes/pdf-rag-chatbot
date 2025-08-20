@@ -1,5 +1,7 @@
 # 📄 PDF RAG Chatbot
 
+To try it - open [**Link**](https://pdf-rag-chatbot-8mmj.onrender.com)
+
 A conversational AI chatbot that allows users to upload PDFs and query their contents. The app uses **RAG (Retrieval-Augmented Generation)** with:
 
 - 📚 **ChromaDB** for vector storage
@@ -37,6 +39,7 @@ cd pdf-rag-chatbot
 ```bash
 python -m venv venv
 source venv/bin/activate   # On Windows: venv\Scripts\activate
+cd app
 pip install -r requirements.txt
 ```
 
@@ -56,14 +59,14 @@ GROQ_API_KEY=your_groq_api_key_here
 ### Run the Streamlit web app:
 
 ```bash
-streamlit run app/webapp.py
+streamlit run webapp.py
 ```
 
 Then open: [**http://localhost:8501**](http://localhost:8501) in your browser.
 
 ### Use CLI:
 ```bash
-python3 app/qa.py
+python3 qa.py
 ```
 
 ---

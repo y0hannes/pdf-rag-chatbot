@@ -1,11 +1,11 @@
 import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from langchain.vectorstores.base import VectorStoreRetriever
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain.prompts import PromptTemplate
 from langchain.chains import ConversationalRetrievalChain
+from langchain_core.retrievers import BaseRetriever
 from langchain.memory import ConversationSummaryMemory
 from config import PERSIST_DIR, EMBEDDING_MODEL, LLM_MODEL
 
@@ -19,10 +19,14 @@ def load_chroma():
     )
 
     if not os.path.exists(os.path.join(PERSIST_DIR, "chroma.sqlite3")):
-        class EmptyRetriever(VectorStoreRetriever):
-            def get_relevant_documents(self, query):
+        class DummyRetriever(BaseRetriever):
+            def _get_relevant_documents(self, query):
                 return []
-        return EmptyRetriever()
+
+            async def _aget_relevant_documents(self, query):
+                return []
+
+        return DummyRetriever()
 
     vectordb = Chroma(
         persist_directory=PERSIST_DIR,
@@ -33,12 +37,10 @@ def load_chroma():
 
 def create_qa_chain():
     db = load_chroma()
-    retriever = None
     if isinstance(db, Chroma):
         retriever = db.as_retriever(search_type="mmr", search_kwargs={"k": 2})
     else:
         retriever = db
-
     template = """
     You are a helpful AI assistant. Answer the question based only on the context below.
 
