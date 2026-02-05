@@ -6,6 +6,10 @@ from datetime import datetime
 from shared import create_qa_chain
 from ingest import main as ingest_main
 from config import DATA_DIR, PERSIST_DIR, PROCESSED_FILES_LOG
+from keep_alive import start_keep_alive
+
+# Start keep-alive pinger
+start_keep_alive()
 
 
 # Event Loop 
