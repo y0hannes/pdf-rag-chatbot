@@ -12,13 +12,13 @@ from config import PERSIST_DIR, EMBEDDING_MODEL, LLM_MODEL
 load_dotenv()
 
 
-def load_chroma():
+def load_chroma(persist_dir=PERSIST_DIR):
     embeddings = GoogleGenerativeAIEmbeddings(
         model=EMBEDDING_MODEL,
         google_api_key=os.getenv("GOOGLE_API_KEY")
     )
 
-    if not os.path.exists(os.path.join(PERSIST_DIR, "chroma.sqlite3")):
+    if not os.path.exists(os.path.join(persist_dir, "chroma.sqlite3")):
         class DummyRetriever(BaseRetriever):
             def _get_relevant_documents(self, query):
                 return []
@@ -29,14 +29,14 @@ def load_chroma():
         return DummyRetriever()
 
     vectordb = Chroma(
-        persist_directory=PERSIST_DIR,
+        persist_directory=persist_dir,
         embedding_function=embeddings
     )
     return vectordb
 
 
-def create_qa_chain():
-    db = load_chroma()
+def create_qa_chain(persist_dir=PERSIST_DIR):
+    db = load_chroma(persist_dir)
     if isinstance(db, Chroma):
         retriever = db.as_retriever(search_type="mmr", search_kwargs={"k": 2})
     else:

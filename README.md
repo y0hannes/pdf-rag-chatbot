@@ -19,9 +19,12 @@ Each conversation is **isolated**, with its own vector DB and file uploads (like
 - Ask natural language questions about the uploaded documents
 - Conversational memory (chat history)
 - Show document sources for each answer
-- Answer 'I don't know' when the PDF doesn't have any information' 
+- Answer 'I don't know' when the PDF doesn't have any information'
 - Multiple conversation threads (each with its own PDF set & DB)
 - Reset, clear, or create new conversations at any time
+- **🔒 Ephemeral Storage System**: Each user gets an isolated session with automatic cleanup
+- **💰 Cost-Efficient**: No persistent user data storage - reduces cloud and database costs
+- **🔐 Privacy-First**: User data is completely isolated and automatically deleted
 
 ---
 
@@ -30,7 +33,7 @@ Each conversation is **isolated**, with its own vector DB and file uploads (like
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/pdf-rag-chatbot.git
+git clone https://github.com/y0hannes/pdf-rag-chatbot.git
 cd pdf-rag-chatbot
 ```
 

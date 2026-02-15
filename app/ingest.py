@@ -5,21 +5,22 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
-from config import DATA_DIR, PERSIST_DIR, PROCESSED_FILES_LOG, EMBEDDING_MODEL
+from config import DATA_DIR, PERSIST_DIR, EMBEDDING_MODEL
 
 load_dotenv(override=True)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def get_processed_files():
-    if not os.path.exists(PROCESSED_FILES_LOG):
+def get_processed_files(log_file):
+    if not os.path.exists(log_file):
         return set()
-    with open(PROCESSED_FILES_LOG, "r") as f:
+    with open(log_file, "r") as f:
         return set(f.read().splitlines())
 
 
-def update_processed_files(new_files):
-    with open(PROCESSED_FILES_LOG, "a") as f:
+def update_processed_files(log_file, new_files):
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    with open(log_file, "a") as f:
         for filename in new_files:
             f.write(f"{filename}\n")
 
@@ -27,6 +28,9 @@ def update_processed_files(new_files):
 def load_new_pdfs(data_dir, processed_files):
     docs = []
     new_files = []
+    if not os.path.exists(data_dir):
+        return docs, new_files
+        
     for filename in os.listdir(data_dir):
         if filename.lower().endswith(".pdf") and filename not in processed_files:
             filepath = os.path.join(data_dir, filename)
@@ -81,15 +85,18 @@ def manage_chroma_index(chunks, persist_dir):
     logging.info(f"Saved ChromaDB to: {persist_dir}")
 
 
-def main():
+def main(data_dir=DATA_DIR, persist_dir=PERSIST_DIR, log_file=None):
     load_dotenv()
-    processed_files = get_processed_files()
-    documents, new_files = load_new_pdfs(DATA_DIR, processed_files)
+    if log_file is None:
+        log_file = os.path.join(persist_dir, "processed_files.log")
+        
+    processed_files = get_processed_files(log_file)
+    documents, new_files = load_new_pdfs(data_dir, processed_files)
 
     if documents:
         chunks = chunk_documents(documents)
-        manage_chroma_index(chunks, PERSIST_DIR)
-        update_processed_files(new_files)
+        manage_chroma_index(chunks, persist_dir)
+        update_processed_files(log_file, new_files)
     else:
         logging.info("No new PDF files to process.")
 
